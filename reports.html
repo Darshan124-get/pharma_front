@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Pharmacy Pro</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .nav-tabs {
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #64748b;
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #4f46e5;
+            border-bottom: 2px solid #4f46e5;
+            background: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+        <header class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h2 class="fw-bold m-0">Business Intelligence</h2>
+                <p class="text-muted">Analyze sales, profits, and inventory health</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" id="exportPdfBtn"><i class="fas fa-file-pdf me-2"></i>Export
+                    PDF</button>
+                <button class="btn btn-outline-secondary" id="exportExcelBtn"><i
+                        class="fas fa-file-excel me-2"></i>Export Excel</button>
+            </div>
+        </header>
+
+        <div class="card mb-4">
+            <div class="card-header bg-white p-0">
+                <ul class="nav nav-tabs px-3" id="reportTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-report="sales">Sales Analytics</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-report="inventory">Stock Status</button>
+                    </li>
+                    <li class="nav-item" id="profitTabLi" style="display: none;">
+                        <button class="nav-link" data-report="profit">Profit & Revenue</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-report="expiry">Expiry Alerts</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body p-4">
+                <!-- Data Filters -->
+                <div class="row g-3 mb-4 align-items-end">
+                    <div class="col-md-3">
+                        <label class="small text-muted mb-1">Start Date</label>
+                        <input type="date" class="form-control form-control-sm" id="startDate">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small text-muted mb-1">End Date</label>
+                        <input type="date" class="form-control form-control-sm" id="endDate">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary btn-sm w-100" onclick="reloadData()">Apply Filter</button>
+                    </div>
+                </div>
+
+                <div id="reportContent">
+                    <!-- Dynamic report content here -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2 text-muted">Generating Report...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/api.js"></script>
+    <script>
+        let activeReport = 'sales';
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        async function initPage() {
+            await api.loadSidebar('reports');
+
+            // Role check for profit tab
+            if (user && (user.role === 'admin' || user.role === 'subadmin')) {
+                document.getElementById('profitTabLi').style.display = 'block';
+            }
+
+            // Set default dates (current month)
+            const d = new Date();
+            document.getElementById('startDate').value = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+            document.getElementById('endDate').value = d.toISOString().split('T')[0];
+
+            // Export listeners
+            document.getElementById('exportPdfBtn').addEventListener('click', () => exportData('pdf'));
+            document.getElementById('exportExcelBtn').addEventListener('click', () => exportData('excel'));
+
+            reloadData();
+        }
+
+        async function exportData(format) {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const url = `http://localhost:5000/api/reports/export/${format}?type=${activeReport}&start_date=${start}&end_date=${end}`;
+
+            // For simple exports, we can just open in new tab or use a hidden anchor
+            // Since it requires Auth header, we use fetch and blob
+            try {
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) throw new Error('Export failed');
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `${activeReport}_report_${new Date().getTime()}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch (err) { api.showNotification(err.message, 'error'); }
+        }
+
+        // Tab switching
+        document.querySelectorAll('#reportTabs button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('#reportTabs button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeReport = btn.dataset.report;
+                reloadData();
+            });
+        });
+
+
+        async function reloadData() {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const content = document.getElementById('reportContent');
+
+            content.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                if (activeReport === 'sales') await renderSalesReport(start, end);
+                if (activeReport === 'inventory') await renderInventoryReport();
+                if (activeReport === 'profit') await renderProfitReport(start, end);
+                if (activeReport === 'expiry') await renderExpiryReport();
+            } catch (err) { api.showNotification(err.message, 'error'); }
+        }
+
+        async function renderSalesReport(start, end) {
+            const res = await api.get(`/reports/sales?start_date=${start}&end_date=${end}`);
+            const data = res.data;
+            const summary = data.summary;
+
+            document.getElementById('reportContent').innerHTML = `
+                <div class="row g-4 mb-5">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded">
+                            <p class="text-muted small mb-1">Total Bills</p>
+                            <h4 class="fw-bold m-0">${summary.total_bills || 0}</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded">
+                            <p class="text-muted small mb-1">Gross Revenue</p>
+                            <h4 class="fw-bold m-0 text-success">₹ ${summary.total_revenue || 0}</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded">
+                            <p class="text-muted small mb-1">Avg Bill Value</p>
+                            <h4 class="fw-bold m-0">₹ ${summary.average_bill_amount?.toFixed(2) || 0}</h4>
+                        </div>
+                    </div>
+                </div>
+                <h6 class="fw-bold mb-3">Top Selling Medicines</h6>
+                <table class="table table-sm">
+                    <thead><tr><th>Medicine</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+                    <tbody>
+                        ${data.top_selling_medicines.map(m => `
+                            <tr><td>${m.medicine_name}</td><td>${m.total_quantity_sold}</td><td>₹ ${m.total_revenue}</td></tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function renderInventoryReport() {
+            const res = await api.get('/reports/inventory');
+            const data = res.data;
+
+            document.getElementById('reportContent').innerHTML = `
+                <div class="row g-4 mb-5">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light">
+                            <p class="text-muted small mb-1">Stock Portfolio Value (Cost)</p>
+                            <h4 class="fw-bold m-0">₹ ${data.summary.total_purchase_value?.toFixed(2)}</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light">
+                            <p class="text-muted small mb-1">Estimated Selling Value</p>
+                            <h4 class="fw-bold m-0 text-primary">₹ ${data.summary.total_selling_value?.toFixed(2)}</h4>
+                        </div>
+                    </div>
+                </div>
+                <h6 class="fw-bold mb-3 text-warning">Low Stock Items (${data.low_stock_medicines.length})</h6>
+                <table class="table table-sm mb-4">
+                    <thead><tr><th>Medicine</th><th>Current Qty</th></tr></thead>
+                    <tbody>
+                        ${data.low_stock_medicines.map(m => `<tr><td>${m.medicine_name}</td><td><span class="text-danger fw-bold">${m.quantity}</span></td></tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function renderProfitReport(start, end) {
+            const res = await api.get(`/reports/profit?start_date=${start}&end_date=${end}`);
+            const p = res.data;
+
+            document.getElementById('reportContent').innerHTML = `
+                <div class="card bg-primary text-white p-4 mb-4 border-0">
+                    <p class="mb-1 opacity-75">Net Profit Margin</p>
+                    <h2 class="fw-bold mb-0">${p.profit_margin_percent || 0}%</h2>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-4"><p class="text-muted mb-1 small">Total Revenue</p><h5>₹ ${p.total_revenue || 0}</h5></div>
+                    <div class="col-md-4"><p class="text-muted mb-1 small">Product Costs</p><h5>₹ ${p.total_cost || 0}</h5></div>
+                    <div class="col-md-4"><p class="text-muted mb-1 small">Gross Profit</p><h5 class="text-success">₹ ${p.gross_profit || 0}</h5></div>
+                </div>
+            `;
+        }
+
+        async function renderExpiryReport() {
+            const res = await api.get('/reports/expiring?days=90');
+            const data = res.data;
+
+            document.getElementById('reportContent').innerHTML = `
+                <h6 class="fw-bold mb-3 text-danger">Expired Medicines (${data.expired.length})</h6>
+                <table class="table table-sm mb-5">
+                    <thead><tr><th>Medicine</th><th>Expiry Date</th><th>Action</th></tr></thead>
+                    <tbody>
+                        ${data.expired.map(m => `<tr><td>${m.medicine_name}</td><td class="text-danger">${new Date(m.expiry_date).toLocaleDateString()}</td><td><span class="badge bg-danger">Dispose</span></td></tr>`).join('')}
+                    </tbody>
+                </table>
+
+                <h6 class="fw-bold mb-3 text-warning">Expiring in next 90 days (${data.expiring_soon.length})</h6>
+                <table class="table table-sm">
+                    <thead><tr><th>Medicine</th><th>Expiry Date</th></tr></thead>
+                    <tbody>
+                        ${data.expiring_soon.map(m => `<tr><td>${m.medicine_name}</td><td>${new Date(m.expiry_date).toLocaleDateString()}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        initPage();
+    </script>
+</body>
+
+</html>

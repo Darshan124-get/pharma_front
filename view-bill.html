@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Bill - Pharmacy Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+        }
+
+        body {
+            background-color: #f8fafc;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+        }
+
+        .bill-card {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .bill-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .bill-content {
+            padding: 40px;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .meta-value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .table thead th {
+            background: #f1f5f9;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border: none;
+        }
+
+        .total-section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 30px;
+        }
+
+        .final-amount {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .bill-card {
+                margin: 0;
+                box-shadow: none;
+                border: none;
+                max-width: 100%;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .bill-header {
+                background: #000 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container animate__animated animate__fadeIn">
+        <div class="bill-card">
+            <!-- Loading State -->
+            <div id="loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Retrieving your bill...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error" class="text-center py-5 d-none">
+                <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                <h3>Bill Not Found</h3>
+                <p class="text-muted">We couldn't find the requested bill. Please check the link in your email.</p>
+            </div>
+
+            <!-- Bill Content -->
+            <div id="billContainer" class="d-none">
+                <div class="bill-header">
+                    <h1 class="mb-1"><i class="fas fa-medkit me-2"></i>Pharmacy Pro</h1>
+                    <p class="mb-0 opacity-75">Digital Purchase Receipt</p>
+                </div>
+
+                <div class="bill-content">
+                    <div class="row mb-5">
+                        <div class="col-sm-6">
+                            <div class="meta-label">Billed To</div>
+                            <div class="meta-value" id="customerName"></div>
+                            <div class="text-muted small" id="customerPhone"></div>
+                            <div class="text-muted small" id="customerAddress"></div>
+                        </div>
+                        <div class="col-sm-6 text-sm-end mt-3 mt-sm-0">
+                            <div class="meta-label">Invoice Details</div>
+                            <div class="meta-value">Bill #<span id="billNumber"></span></div>
+                            <div class="text-muted small">Date: <span id="billDate"></span></div>
+                            <div class="badge bg-success bg-opacity-10 text-success mt-2">PAID</div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Medicine / Item</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Price</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="billItems">
+                                <!-- Items injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row justify-content-end">
+                        <div class="col-md-5">
+                            <div class="total-section">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Subtotal</span>
+                                    <span id="subtotal"></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">GST Total</span>
+                                    <span id="gstAmount"></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-danger">
+                                    <span>Discount</span>
+                                    <span id="discount"></span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="h6 mb-0">Total Paid</span>
+                                    <span class="final-amount" id="finalAmount"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-5 no-print">
+                        <button class="btn btn-primary btn-lg px-4 me-2" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i>Print Receipt
+                        </button>
+                    </div>
+                </div>
+
+                <div class="footer bg-light p-4 text-center text-muted small">
+                    <p class="mb-1">&copy; 2026 Pharmacy Pro. All rights reserved.</p>
+                    <p class="mb-0">This is a digital record of your purchase. For any queries, contact us at
+                        pharmacy@pro.com</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/api.js"></script>
+    <script>
+        async function fetchBill() {
+            const params = new URLSearchParams(window.location.search);
+            const billNumber = params.get('bill');
+
+            if (!billNumber) {
+                showError();
+                return;
+            }
+
+            try {
+                // Using the specific public endpoint
+                const response = await fetch(`http://127.0.0.1:5000/api/bills/public/${billNumber}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    renderBill(result.data);
+                } else {
+                    showError();
+                }
+            } catch (err) {
+                console.error(err);
+                showError();
+            }
+        }
+
+        function renderBill(bill) {
+            document.getElementById('loading').classList.add('d-none');
+            document.getElementById('billContainer').classList.remove('d-none');
+
+            document.getElementById('customerName').textContent = bill.customer_name || 'Walk-in Customer';
+            document.getElementById('customerPhone').textContent = bill.customer_phone || '';
+            document.getElementById('customerAddress').textContent = bill.customer_address || '';
+            document.getElementById('billNumber').textContent = bill.bill_number;
+            document.getElementById('billDate').textContent = new Date(bill.bill_date).toLocaleDateString('en-IN', {
+                day: 'numeric', month: 'long', year: 'numeric'
+            });
+
+            const itemsBody = document.getElementById('billItems');
+            itemsBody.innerHTML = bill.items.map(item => `
+                <tr>
+                    <td>
+                        <div class="fw-bold">${item.medicine_name}</div>
+                        <div class="text-muted x-small">${item.gst_percent}% GST included</div>
+                    </td>
+                    <td class="text-center">${item.quantity}</td>
+                    <td class="text-end">₹ ${parseFloat(item.price).toFixed(2)}</td>
+                    <td class="text-end fw-bold">₹ ${parseFloat(item.total_price).toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('subtotal').textContent = `₹ ${parseFloat(bill.total_amount).toFixed(2)}`;
+            document.getElementById('gstAmount').textContent = `₹ ${parseFloat(bill.gst_amount).toFixed(2)}`;
+            document.getElementById('discount').textContent = `- ₹ ${parseFloat(bill.discount).toFixed(2)}`;
+            document.getElementById('finalAmount').textContent = `₹ ${parseFloat(bill.final_amount).toFixed(2)}`;
+        }
+
+        function showError() {
+            document.getElementById('loading').classList.add('d-none');
+            document.getElementById('error').classList.remove('d-none');
+        }
+
+        fetchBill();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Pharmacy Pro</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+
+    <!-- Sidebar placeholder -->
+    <div id="sidebar-container"></div>
+
+    <!-- Mobile Toggle and Overlay -->
+    <button class="mobile-toggle" id="mobileToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-wrapper">
+        <header class="mb-5">
+            <h2 class="fw-bold m-0">My Profile</h2>
+            <p class="text-muted">Manage your personal information and account settings</p>
+        </header>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-4">Edit Profile</h5>
+                    <form id="profileForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Full Name</label>
+                                <input type="text" class="form-control" id="fullName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Email Address</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Phone Number</label>
+                                <input type="text" class="form-control" id="phone">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Role</label>
+                                <input type="text" class="form-control bg-light" id="role" readonly>
+                                <div class="form-text">Role can only be changed by an administrator.</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-medium">Profile Image</label>
+                                <input type="file" class="form-control" id="profileImageInput" name="image"
+                                    accept="image/*">
+                            </div>
+                        </div>
+
+
+                        <div class="mt-4 pt-2 border-top">
+                            <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+                                <i class="fas fa-save me-2"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card p-4 mt-4">
+                    <h5 class="fw-bold mb-4">Security</h5>
+                    <form id="passwordForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Current Password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="currentPassword" required>
+                                    <span class="input-group-text bg-white" style="cursor: pointer;"
+                                        onclick="togglePassword('currentPassword', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">New Password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="newPassword" required>
+                                    <span class="input-group-text bg-white" style="cursor: pointer;"
+                                        onclick="togglePassword('newPassword', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-2 border-top text-end">
+                            <button type="submit" class="btn btn-outline-primary" id="changePasswordBtn">
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card p-4 text-center">
+                    <div class="mb-4">
+                        <div class="avatar bg-primary rounded-circle mx-auto d-flex align-items-center justify-content-center overflow-hidden"
+                            style="width: 100px; height: 100px; font-size: 3rem; color: white;">
+                            <img id="profileImageDisplay" src=""
+                                style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                            <i id="profileIconDisplay" class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <h5 class="fw-bold m-0" id="profileNameDisplay">User Name</h5>
+                    <p class="text-muted mb-4" id="profileRoleDisplay">Role</p>
+
+                    <div class="text-start bg-light p-3 rounded">
+                        <p class="small text-muted mb-1">Joined</p>
+                        <p class="fw-medium mb-0" id="profileJoinedDate">January 1, 2024</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/api.js"></script>
+    <script>
+        async function initProfile() {
+            try {
+                // Initialize Sidebar
+                await api.loadSidebar('profile');
+
+                // Load User Data
+                let user = JSON.parse(localStorage.getItem('user'));
+                try {
+                    const freshUser = await api.get('/auth/me');
+                    if (freshUser.success) {
+                        user = freshUser.data;
+                        localStorage.setItem('user', JSON.stringify(user));
+                    }
+                } catch (e) { console.error("Could not refresh user data", e); }
+
+                if (user) {
+                    document.getElementById('fullName').value = user.full_name;
+                    document.getElementById('email').value = user.email;
+                    document.getElementById('phone').value = user.phone || '';
+                    document.getElementById('role').value = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+
+                    document.getElementById('profileNameDisplay').textContent = user.full_name;
+                    document.getElementById('profileRoleDisplay').textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+
+                    if (user.image_url && user.image_url !== 'None') {
+                        const img = document.getElementById('profileImageDisplay');
+                        const icon = document.getElementById('profileIconDisplay');
+                        img.src = user.image_url;
+                        img.style.display = 'block';
+                        icon.style.display = 'none';
+
+                        img.onerror = function () {
+                            this.style.display = 'none';
+                            icon.style.display = 'block';
+                        };
+                    }
+
+                    if (user.created_at) {
+                        const date = new Date(user.created_at);
+                        document.getElementById('profileJoinedDate').textContent = date.toLocaleDateString('en-IN', {
+                            year: 'numeric', month: 'long', day: 'numeric'
+                        });
+                    }
+                }
+
+                // Handle Form Submission
+                document.getElementById('profileForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const saveBtn = document.getElementById('saveProfileBtn');
+                    const message = document.getElementById('profileMessage');
+
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+                    try {
+                        const formData = new FormData(e.target);
+                        // Make sure to add other fields manually if they are not in the form correctly
+                        // But since we are using e.target (the form), names like 'full_name' etc should be there
+                        // Actually, I should add them if they are just inputs without names or with different IDs
+
+                        // Let's ensure name attributes are present on inputs
+                        const fullNameInput = document.getElementById('fullName');
+                        const emailInput = document.getElementById('email');
+                        const phoneInput = document.getElementById('phone');
+                        if (!fullNameInput.name) fullNameInput.name = 'full_name';
+                        if (!emailInput.name) emailInput.name = 'email';
+                        if (!phoneInput.name) phoneInput.name = 'phone';
+
+                        const refreshedFormData = new FormData(e.target);
+                        const result = await api.put('/auth/profile', refreshedFormData);
+
+                        if (result.success) {
+                            // Update local storage
+                            localStorage.setItem('user', JSON.stringify(result.data));
+
+                            // Update UI displays
+                            document.getElementById('profileNameDisplay').textContent = result.data.full_name;
+
+                            if (result.data.image_url && result.data.image_url !== 'None') {
+                                const img = document.getElementById('profileImageDisplay');
+                                const icon = document.getElementById('profileIconDisplay');
+                                img.src = result.data.image_url;
+                                img.style.display = 'block';
+                                icon.style.display = 'none';
+
+                                img.onerror = function () {
+                                    this.style.display = 'none';
+                                    icon.style.display = 'block';
+                                };
+                            }
+
+                            const sidebarName = document.getElementById('sidebarUserName');
+                            if (sidebarName) sidebarName.textContent = result.data.full_name;
+
+                            const sidebarImg = document.getElementById('sidebarUserImg');
+                            const sidebarIcon = document.getElementById('sidebarUserIcon');
+                            if (sidebarImg && sidebarIcon && result.data.image_url && result.data.image_url !== 'None') {
+                                sidebarImg.src = result.data.image_url;
+                                sidebarImg.style.display = 'block';
+                                sidebarIcon.style.display = 'none';
+                            }
+
+                            api.showNotification('Profile updated successfully!');
+                        }
+                    } catch (err) {
+                        api.showNotification(err.message, 'error');
+                    } finally {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-save me-2"></i> Save Changes';
+                    }
+                });
+
+                // Handle Password Change
+                document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const btn = document.getElementById('changePasswordBtn');
+                    const message = document.getElementById('passwordMessage');
+
+                    const current_password = document.getElementById('currentPassword').value;
+                    const new_password = document.getElementById('newPassword').value;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Updating...';
+
+                    try {
+                        const result = await api.post('/auth/change-password', { current_password, new_password });
+                        if (result.success) {
+                            e.target.reset();
+                            api.showNotification('Password updated successfully!');
+                        }
+                    } catch (err) {
+                        api.showNotification(err.message, 'error');
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Update Password';
+                    }
+                });
+
+            } catch (err) {
+                console.error("Profile page error:", err);
+            }
+        }
+
+        initProfile();
+    </script>
+</body>
+
+</html>

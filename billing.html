@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Bill - Pharmacy Pro</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+
+    <div id="sidebar-container" style="display: none;"></div>
+
+    <div class="main-wrapper" style="margin-left: 0; max-width: 1400px; margin: 0 auto;">
+        <header class="d-flex justify-content-between align-items-center mb-4 pt-3">
+            <div class="d-flex align-items-center gap-3">
+                <a href="dashboard.html" class="btn btn-light rounded-circle"><i class="fas fa-arrow-left"></i></a>
+                <h2 class="fw-bold m-0">POS Billing</h2>
+            </div>
+            <div id="currentTime" class="text-muted fw-medium"></div>
+        </header>
+
+        <div class="row g-4">
+            <!-- Left Side: Item Selection -->
+            <div class="col-lg-8">
+                <div class="card p-4">
+                    <div class="mb-4 d-flex gap-3">
+                        <div class="input-group flex-grow-1">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-search"></i></span>
+                            <input type="text" id="medSearch" class="form-control border-start-0 ps-0 bg-light"
+                                placeholder="Search medicine by name or barcode...">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 500px;">
+                        <table class="table table-hover align-middle">
+                            <thead class="sticky-top bg-white">
+                                <tr>
+                                    <th>Medicine Name</th>
+                                    <th>Batch</th>
+                                    <th>Stock</th>
+                                    <th>Exp.</th>
+                                    <th>Price</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="searchTableBody">
+                                <!-- Search results here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Bill Items & Summary -->
+            <div class="col-lg-4">
+                <div class="card p-4 h-100">
+                    <h5 class="fw-bold mb-4 d-flex justify-content-between">
+                        Cart Summary
+                        <span class="badge bg-primary rounded-pill" id="cartCount">0</span>
+                    </h5>
+
+                    <!-- Cart Items -->
+                    <div id="cartItems" class="mb-4" style="min-height: 200px; max-height: 400px; overflow-y: auto;">
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-shopping-basket fa-3x mb-3 opacity-25"></i>
+                            <p>Cart is empty</p>
+                        </div>
+                    </div>
+
+                    <!-- Summary Section -->
+                    <div class="border-top pt-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Total (Items)</span>
+                            <span id="summaryTotal">₹ 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">GST Amount</span>
+                            <span id="summaryGST">₹ 0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="text-muted">Discount (₹)</span>
+                            <input type="number" id="discountInput" class="form-control form-control-sm text-end w-25"
+                                value="0">
+                        </div>
+                        <div class="d-flex justify-content-between mb-4 mt-3 border-top pt-3">
+                            <h4 class="fw-bold">Payable Total</h4>
+                            <h4 class="fw-bold text-primary" id="finalTotal">₹ 0.00</h4>
+                        </div>
+
+                        <!-- Customer Info -->
+                        <div class="mb-4 p-3 bg-light rounded-3">
+                            <div class="mb-2">
+                                <label class="small text-muted mb-1">Customer Name <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" id="custName" class="form-control form-control-sm"
+                                    placeholder="Full name" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="small text-muted mb-1">Customer Phone (Optional)</label>
+                                <input type="text" id="custPhone" class="form-control form-control-sm"
+                                    placeholder="Mobile number">
+                            </div>
+                            <div class="mb-2">
+                                <label class="small text-muted mb-1">Customer Email (Optional)</label>
+                                <input type="email" id="custEmail" class="form-control form-control-sm"
+                                    placeholder="email@example.com">
+                            </div>
+                            <div>
+                                <label class="small text-muted mb-1">Address (Optional)</label>
+                                <textarea id="custAddress" class="form-control form-control-sm mb-2" rows="1"
+                                    placeholder="Customer address"></textarea>
+                            </div>
+                            <div class="mb-3 mt-3">
+                                <label class="small text-muted mb-2 d-block">Payment Method</label>
+                                <div class="d-flex gap-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payMethod" id="payCash"
+                                            value="cash" checked>
+                                        <label class="form-check-label small fw-bold" for="payCash">CASH</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payMethod" id="payOnline"
+                                            value="online">
+                                        <label class="form-check-label small fw-bold" for="payOnline">ONLINE
+                                            (QR)</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- QR Code Container -->
+                            <div id="qrContainer"
+                                class="d-none text-center p-3 border rounded bg-white mt-3 shadow-sm animate__animated animate__fadeIn">
+                                <div class="small fw-bold text-muted mb-2">SCAN TO PAY</div>
+                                <div id="qrLoading" class="p-4">
+                                    <div class="spinner-border text-primary"></div>
+                                </div>
+                                <img id="qrImage" src="" alt="QR Code" class="img-fluid d-none"
+                                    style="max-height: 400px; width: 100%; object-fit: contain;">
+                                <div class="mt-2 h4 fw-bold text-primary" id="qrAmountDisplay">₹ 0.00</div>
+                                <div class="x-small text-muted mt-1" id="qrStatus">Generating dynamic QR...</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button class="btn btn-outline-secondary w-100 py-3"
+                                    onclick="clearCart()">Clear</button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-primary w-100 py-3 fw-bold"
+                                    id="generateBillBtn">FINALIZE</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/api.js"></script>
+    <script>
+        let cart = [];
+        let allMedicines = [];
+
+        async function initPage() {
+            // Fetch medicines for searching
+            const result = await api.get('/medicines');
+            allMedicines = result.data;
+            updateTime();
+            setInterval(updateTime, 1000);
+            renderSearchResults(allMedicines);
+        }
+
+        function updateTime() {
+            document.getElementById('currentTime').textContent = new Date().toLocaleString('en-IN', {
+                dateStyle: 'medium',
+                timeStyle: 'medium'
+            });
+        }
+
+        function renderSearchResults(medicines) {
+            const body = document.getElementById('searchTableBody');
+            body.innerHTML = medicines.map(med => {
+                const imageUrl = (med.image_url && med.image_url !== 'None') ? med.image_url : null;
+                return `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-sm bg-light rounded-2 d-flex align-items-center justify-content-center overflow-hidden" style="width:32px; height:32px;">
+                                ${imageUrl ?
+                        `<img src="${imageUrl}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fas fa-pills text-muted\'></i>'">` :
+                        '<i class="fas fa-pills text-muted"></i>'
+                    }
+                            </div>
+                            <div>
+                                <div class="fw-medium">${med.medicine_name}</div>
+                                <div class="x-small text-muted">${med.category}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="small">${med.batch_number || '-'}</td>
+                    <td>
+                        <span class="badge ${med.quantity <= 10 ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success'}">
+                            ${med.quantity} unit
+                        </span>
+                    </td>
+                    <td class="small">${med.expiry_date ? new Date(med.expiry_date).toLocaleDateString() : '-'}</td>
+                    <td class="fw-bold">₹ ${med.selling_price}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-primary" ${med.quantity <= 0 ? 'disabled' : ''} onclick="addToCart(${med.medicine_id})">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function addToCart(medId) {
+            const med = allMedicines.find(m => m.medicine_id === medId);
+            const existing = cart.find(item => item.medicine_id === medId);
+
+            if (existing) {
+                if (existing.qty < med.quantity) {
+                    existing.qty++;
+                } else {
+                    api.showNotification('Maximum stock limit reached in cart', 'warning');
+                }
+            } else {
+                cart.push({ ...med, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function updateQty(id, delta) {
+            const item = cart.find(i => i.medicine_id === id);
+            const med = allMedicines.find(m => m.medicine_id === id);
+
+            if (item) {
+                const newQty = item.qty + delta;
+                if (newQty > 0 && newQty <= med.quantity) {
+                    item.qty = newQty;
+                } else if (newQty === 0) {
+                    cart = cart.filter(i => i.medicine_id !== id);
+                }
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartItems');
+            const cartCount = document.getElementById('cartCount');
+
+            cartCount.textContent = cart.length;
+
+            if (cart.length === 0) {
+                container.innerHTML = '<div class="text-center py-5 text-muted"><i class="fas fa-shopping-basket fa-3x mb-3 opacity-25"></i><p>Cart is empty</p></div>';
+                updateSummary(0, 0);
+                return;
+            }
+
+            container.innerHTML = cart.map(item => {
+                const imageUrl = (item.image_url && item.image_url !== 'None') ? item.image_url : null;
+                return `
+                <div class="mb-3 p-2 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-sm bg-light rounded-2 d-flex align-items-center justify-content-center overflow-hidden" style="width:32px; height:32px;">
+                                ${imageUrl ?
+                        `<img src="${imageUrl}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fas fa-pills text-muted\'></i>'">` :
+                        '<i class="fas fa-pills text-muted"></i>'
+                    }
+                            </div>
+                            <div class="fw-medium small">${item.medicine_name}</div>
+                        </div>
+                        <div class="fw-bold small text-primary">₹ ${(item.selling_price * item.qty).toFixed(2)}</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group btn-group-sm ms-5">
+                            <button class="btn btn-outline-secondary" onclick="updateQty(${item.medicine_id}, -1)">-</button>
+                            <span class="btn border-secondary-subtle px-3 fw-bold bg-light">${item.qty}</span>
+                            <button class="btn btn-outline-secondary" onclick="updateQty(${item.medicine_id}, 1)">+</button>
+                        </div>
+                        <div class="x-small text-muted">@ ₹ ${item.selling_price} + ${item.gst_percent}% GST</div>
+                    </div>
+                </div>
+            `}).join('');
+
+            // Calculate totals
+            let total = 0;
+            let gst = 0;
+            cart.forEach(item => {
+                const itemTotal = item.selling_price * item.qty;
+                total += itemTotal;
+                gst += (itemTotal * item.gst_percent) / 100;
+            });
+
+            updateSummary(total, gst);
+        }
+
+        async function updateSummary(total, gst) {
+            const disc = parseFloat(document.getElementById('discountInput').value) || 0;
+            const final = (total + gst) - disc;
+
+            document.getElementById('summaryTotal').textContent = `₹ ${total.toFixed(2)}`;
+            document.getElementById('summaryGST').textContent = `₹ ${gst.toFixed(2)}`;
+            document.getElementById('finalTotal').textContent = `₹ ${Math.max(0, final).toFixed(2)}`;
+
+            // Razorpay QR Handling
+            const method = document.querySelector('input[name="payMethod"]:checked').value;
+            const qrContainer = document.getElementById('qrContainer');
+
+            if (method === 'online' && final > 0) {
+                qrContainer.classList.remove('d-none');
+                await fetchQRCode(final);
+            } else {
+                qrContainer.classList.add('d-none');
+            }
+        }
+
+        let lastQRValue = 0;
+        async function fetchQRCode(amount) {
+            // Avoid duplicate requests for same amount
+            if (Math.abs(lastQRValue - amount) < 0.01) return;
+
+            const qrImage = document.getElementById('qrImage');
+            const qrLoading = document.getElementById('qrLoading');
+            const qrAmountDisplay = document.getElementById('qrAmountDisplay');
+            const qrStatus = document.getElementById('qrStatus');
+
+            qrImage.classList.add('d-none');
+            qrLoading.classList.remove('d-none');
+            qrStatus.textContent = "Generating dynamic QR...";
+            qrAmountDisplay.textContent = `₹ ${amount.toFixed(2)}`;
+
+            try {
+                const response = await api.post('/bills/initiate-payment', { amount: amount });
+                if (response.success && response.data.image_url) {
+                    qrImage.src = response.data.image_url;
+                    qrImage.classList.remove('d-none');
+                    qrLoading.classList.add('d-none');
+                    qrStatus.textContent = "Ready to Scan";
+                    qrStatus.classList.replace('text-muted', 'text-success');
+                    lastQRValue = amount;
+                }
+            } catch (err) {
+                console.error("QR Generation Failed:", err);
+                qrStatus.textContent = "Failed to generate QR";
+                qrStatus.classList.replace('text-muted', 'text-danger');
+            }
+        }
+
+        document.querySelectorAll('input[name="payMethod"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                renderCart();
+            });
+        });
+
+        document.getElementById('discountInput').addEventListener('input', () => {
+            renderCart();
+        });
+
+        // Search filter
+        document.getElementById('medSearch').addEventListener('input', (e) => {
+            const search = e.target.value.toLowerCase();
+            const filtered = allMedicines.filter(m =>
+                m.medicine_name.toLowerCase().includes(search) ||
+                (m.barcode && m.barcode.includes(search))
+            );
+            renderSearchResults(filtered);
+        });
+
+        async function clearCart() {
+            if (await api.confirm("Clear current cart?")) {
+                cart = [];
+                renderCart();
+            }
+        }
+
+        // Generate Bill
+        document.getElementById('generateBillBtn').addEventListener('click', async () => {
+            if (cart.length === 0) {
+                api.showNotification("Please add items to cart", "warning");
+                return;
+            }
+
+            const custName = document.getElementById('custName').value.trim();
+            if (!custName) {
+                api.showNotification("Customer Name is mandatory", "warning");
+                document.getElementById('custName').focus();
+                return;
+            }
+
+            const payload = {
+                customer: {
+                    customer_name: custName,
+                    phone: document.getElementById('custPhone').value,
+                    email: document.getElementById('custEmail').value,
+                    address: document.getElementById('custAddress').value
+                },
+                items: cart.map(i => ({
+                    medicine_id: i.medicine_id,
+                    quantity: i.qty
+                })),
+                discount: parseFloat(document.getElementById('discountInput').value) || 0,
+                payment_method: document.querySelector('input[name="payMethod"]:checked').value
+            };
+
+            const btn = document.getElementById('generateBillBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+
+            try {
+                const result = await api.post('/bills', payload);
+                if (result.success) {
+                    api.showNotification(`Bill #${result.data.bill_number} generated successfully!`);
+                    cart = [];
+                    renderCart();
+                    // Refresh medicine stock for search table
+                    initPage();
+                }
+            } catch (err) {
+                api.showNotification("Billing Error: " + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'FINALIZE';
+            }
+        });
+
+        initPage();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Pharmacy Pro</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+
+    <!-- Sidebar placeholder -->
+    <div id="sidebar-container"></div>
+
+    <!-- Mobile Toggle and Overlay -->
+    <button class="mobile-toggle" id="mobileToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-wrapper">
+        <header class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h2 class="fw-bold m-0">Dashboard Overview</h2>
+                <p class="text-muted">Welcome back, <span id="userName" class="fw-medium text-primary">...</span></p>
+            </div>
+            <div class="text-end">
+                <button class="btn btn-primary d-flex align-items-center gap-2">
+                    <i class="fas fa-plus"></i> New Bill
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="fas fa-indian-rupee-sign"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-1">Today's Sales</p>
+                        <h4 class="fw-bold m-0" id="statTodaySales">₹ 0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-icon bg-success bg-opacity-10 text-success">
+                        <i class="fas fa-pills"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-1">Total Medicines</p>
+                        <h4 class="fw-bold m-0" id="statTotalMeds">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-1">Low Stock</p>
+                        <h4 class="fw-bold m-0" id="statLowStock">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-icon bg-danger bg-opacity-10 text-danger">
+                        <i class="fas fa-calendar-times"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-1">Expiring Soon</p>
+                        <h4 class="fw-bold m-0" id="statExpiring">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts & Recent Activity -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold m-0">Recent Sales Trend</h5>
+                        <select class="form-select form-select-sm w-auto">
+                            <option>Last 7 Days</option>
+                            <option>Last 30 Days</option>
+                        </select>
+                    </div>
+                    <canvas id="salesChart" height="250"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-4">Fast Moving Items</h5>
+                    <div id="fastMovingList">
+                        <div class="text-center py-4 text-muted">Loading trends...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script>
+        // Load sidebar and dashboard data
+        async function initDashboard() {
+            try {
+                // Set user name (from local storage)
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (user) {
+                    document.getElementById('userName').textContent = user.full_name;
+                }
+
+                // Load sidebar component
+                await api.loadSidebar('dashboard');
+
+                // Fetch dashboard stats
+                const [salesReport, inventoryReport, expiringReport] = await Promise.all([
+                    api.get('/reports/sales'),
+                    api.get('/reports/inventory'),
+                    api.get('/reports/expiring')
+                ]);
+
+                // Update UI
+                document.getElementById('statTodaySales').textContent = `₹ ${salesReport.data.summary.total_revenue || 0}`;
+                document.getElementById('statTotalMeds').textContent = inventoryReport.data.summary.total_medicines;
+                document.getElementById('statLowStock').textContent = inventoryReport.data.low_stock_medicines.length;
+                document.getElementById('statExpiring').textContent = expiringReport.data.expiring_soon.length;
+
+                // Build fast moving items table
+                buildFastMoving(salesReport.data.top_selling_medicines);
+
+                // Build chart
+                const salesTrend = await api.get('/reports/sales-trend?days=7');
+                initChart(salesTrend.data);
+
+            } catch (err) {
+                console.error("Dashboard error:", err);
+            }
+        }
+
+        function buildFastMoving(items) {
+            const container = document.getElementById('fastMovingList');
+            if (items.length === 0) {
+                container.innerHTML = '<div class="text-center py-4">No sales data yet</div>';
+                return;
+            }
+
+            container.innerHTML = items.map(item => `
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-light p-2 rounded"><i class="fas fa-pills text-primary"></i></div>
+                        <div>
+                            <p class="m-0 small fw-medium">${item.medicine_name}</p>
+                            <p class="m-0 x-small text-muted">${item.total_quantity_sold} units sold</p>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <p class="m-0 small fw-bold">₹ ${item.total_revenue}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function initChart(data) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+
+            // Reverse data for chronological order
+            const reversedData = [...data].reverse();
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: reversedData.map(d => new Date(d.sale_date).toLocaleDateString('en-IN', { weekday: 'short' })),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: reversedData.map(d => d.total_revenue),
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#4f46e5'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        initDashboard();
+    </script>
+</body>
+
+</html>

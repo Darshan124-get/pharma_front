@@ -1,0 +1,38 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-3 sticky-top">
+    <div class="container-fluid">
+        <button class="btn btn-light bg-light d-lg-none" type="button" data-bs-toggle="collapse"
+            data-bs-target="#sidebarCollapse">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="ms-auto d-flex align-items-center gap-3">
+            <div class="dropdown">
+                <a href="#" class="text-decoration-none d-flex align-items-center gap-2 text-dark dropdown-toggle"
+                    data-bs-toggle="dropdown">
+                    <img src="https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff" id="navAvatar"
+                        class="rounded-circle" width="32" height="32">
+                    <span id="navUserName" class="fw-medium small">User</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                    <li><a class="dropdown-item py-2" href="#"><i class="fas fa-user-circle me-2"></i> Profile</a></li>
+                    <li><a class="dropdown-item py-2" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item py-2 text-danger" href="#" onclick="api.logout()"><i
+                                class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+    (function () {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+            document.getElementById('navUserName').textContent = user.full_name;
+            document.getElementById('navAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name)}&background=4f46e5&color=fff`;
+        }
+    })();
+</script>

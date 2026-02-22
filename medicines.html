@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicines Inventory - Pharmacy Pro</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+
+    <!-- Sidebar placeholder -->
+    <div id="sidebar-container"></div>
+
+    <!-- Mobile Toggle and Overlay -->
+    <button class="mobile-toggle" id="mobileToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-wrapper">
+        <header class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h2 class="fw-bold m-0">Medicines Inventory</h2>
+                <p class="text-muted">Manage your stock, prices, and categories</p>
+            </div>
+            <div>
+                <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal"
+                    data-bs-target="#addMedicineModal">
+                    <i class="fas fa-plus"></i> Add New Medicine
+                </button>
+            </div>
+        </header>
+
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+                <div class="input-group" style="max-width: 400px;">
+                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control border-start-0 bg-light"
+                        placeholder="Search by name or barcode...">
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="fetchMedicines()"><i
+                            class="fas fa-sync"></i></button>
+                    <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-filter"></i></button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Medicine Name</th>
+                            <th>Category</th>
+                            <th>Manufacturer</th>
+                            <th>Batch No.</th>
+                            <th>Expiry</th>
+                            <th>Stock</th>
+                            <th>Unit Price</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="medicineTableBody">
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div class="spinner-border text-primary spinner-border-sm" role="status"></div> Loading
+                                medicines...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Medicine Modal -->
+    <div class="modal fade" id="addMedicineModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered border-0">
+            <div class="modal-content shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold m-0 text-dark">Add New Medicine</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addMedicineForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Medicine Name</label>
+                                <input type="text" class="form-control" name="medicine_name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Category</label>
+                                <select class="form-select category-select" name="category_id" required>
+                                    <option value="">Select Category</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Manufacturer</label>
+                                <input type="text" class="form-control" name="manufacturer">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Batch No.</label>
+                                <input type="text" class="form-control" name="batch_number">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Purchase Price</label>
+                                <input type="number" step="0.01" class="form-control" name="purchase_price" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Selling Price</label>
+                                <input type="number" step="0.01" class="form-control" name="selling_price" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Initial Stock</label>
+                                <input type="number" class="form-control" name="quantity" value="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Expiry Date</label>
+                                <input type="date" class="form-control" name="expiry_date">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Barcode</label>
+                                <input type="text" class="form-control" name="barcode">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Medicine Image</label>
+                                <input type="file" class="form-control" name="image" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-top text-end">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-4">Save Medicine</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Medicine Modal -->
+    <div class="modal fade" id="editMedicineModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered border-0">
+            <div class="modal-content shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold m-0 text-dark">Edit Medicine</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editMedicineForm">
+                        <input type="hidden" name="medicine_id" id="edit_medicine_id">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Medicine Name</label>
+                                <input type="text" class="form-control" name="medicine_name" id="edit_medicine_name"
+                                    required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Category</label>
+                                <select class="form-select category-select" name="category_id" id="edit_category_id"
+                                    required>
+                                    <option value="">Select Category</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Manufacturer</label>
+                                <input type="text" class="form-control" name="manufacturer" id="edit_manufacturer">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Batch No.</label>
+                                <input type="text" class="form-control" name="batch_number" id="edit_batch_number">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Purchase Price</label>
+                                <input type="number" step="0.01" class="form-control" name="purchase_price"
+                                    id="edit_purchase_price" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Selling Price</label>
+                                <input type="number" step="0.01" class="form-control" name="selling_price"
+                                    id="edit_selling_price" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Stock Quantity</label>
+                                <input type="number" class="form-control" name="quantity" id="edit_quantity">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Expiry Date</label>
+                                <input type="date" class="form-control" name="expiry_date" id="edit_expiry_date">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Current Image</label>
+                                <div id="edit_image_preview" class="mb-2">
+                                    <img src="" id="edit_image_display" class="rounded border"
+                                        style="width: 100px; height: 100px; object-fit: cover; display: none;">
+                                    <div id="edit_image_placeholder"
+                                        class="bg-light rounded d-flex align-items-center justify-content-center border"
+                                        style="width: 100px; height: 100px;">
+                                        <i class="fas fa-pills text-muted fa-2x"></i>
+                                    </div>
+                                </div>
+                                <label class="form-label small fw-bold">Update Medicine Image</label>
+                                <input type="file" class="form-control" name="image" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-top text-end">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-4">Update Medicine</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script>
+        let categories = [];
+
+        // Init Page
+        async function initPage() {
+            try {
+                // Load sidebar component
+                await api.loadSidebar('medicines');
+
+                // Fetch data
+                const [medRes, catRes] = await Promise.all([
+                    api.get('/medicines'),
+                    api.get('/categories')
+                ]);
+
+                categories = catRes.data;
+                populateCategoryDropdowns(categories);
+                renderMedicines(medRes.data);
+
+            } catch (err) {
+                console.error("Page init failed:", err);
+            }
+        }
+
+        function populateCategoryDropdowns(cats) {
+            const selects = document.querySelectorAll('.category-select');
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">Select Category</option>' +
+                    cats.map(c => `<option value="${c.category_id}">${c.category_name}</option>`).join('');
+            });
+        }
+
+        async function fetchMedicines(search = '') {
+            try {
+                const result = await api.get(`/medicines${search ? `?search=${search}` : ''}`);
+                renderMedicines(result.data);
+            } catch (err) {
+                document.getElementById('medicineTableBody').innerHTML = `<tr><td colspan="8" class="text-center text-danger">Error loading medicines</td></tr>`;
+            }
+        }
+
+        function renderMedicines(medicines) {
+            const tableBody = document.getElementById('medicineTableBody');
+            const user = JSON.parse(localStorage.getItem('user'));
+            const isAdmin = user && user.role === 'admin';
+
+            if (medicines.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-muted">No medicines found</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = medicines.map(med => {
+                const isLowStock = med.quantity <= 10;
+                const expiryDate = med.expiry_date ? new Date(med.expiry_date).toLocaleDateString('en-IN') : 'N/A';
+                const imageUrl = (med.image_url && med.image_url !== 'None') ? med.image_url : null;
+
+                return `
+                    <tr>
+                        <td class="fw-medium">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="avatar-sm bg-light rounded-2 d-flex align-items-center justify-content-center overflow-hidden" style="width:32px; height:32px;">
+                                    ${imageUrl ?
+                        `<img src="${imageUrl}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fas fa-pills text-muted\'></i>'">` :
+                        '<i class="fas fa-pills text-muted"></i>'
+                    }
+                                </div>
+                                ${med.medicine_name}
+                            </div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">${med.category_name || 'Uncategorized'}</span></td>
+                        <td class="small text-muted">${med.manufacturer || '-'}</td>
+                        <td class="small">${med.batch_number || '-'}</td>
+                        <td class="small">${expiryDate}</td>
+                        <td>
+                            <span class="badge ${isLowStock ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success'}">
+                                ${med.quantity} unit(s)
+                            </span>
+                        </td>
+                        <td class="fw-bold text-primary">₹ ${med.selling_price}</td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="editMedicine(${med.medicine_id})"><i class="fas fa-edit"></i></button>
+                                ${isAdmin ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteMedicine(${med.medicine_id})"><i class="fas fa-trash"></i></button>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Add Medicine
+        document.getElementById('addMedicineForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            try {
+                await api.post('/medicines', formData);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addMedicineModal'));
+                if (modal) modal.hide();
+                e.target.reset();
+                fetchMedicines();
+                api.showNotification("Medicine added successfully");
+            } catch (err) {
+                api.showNotification("Error adding medicine: " + err.message, "error");
+            }
+        });
+
+        // Edit Medicine logic
+        async function editMedicine(id) {
+            try {
+                const res = await api.get(`/medicines/${id}`);
+                const med = res.data;
+
+                document.getElementById('edit_medicine_id').value = med.medicine_id;
+                document.getElementById('edit_medicine_name').value = med.medicine_name;
+                document.getElementById('edit_category_id').value = med.category_id || '';
+                document.getElementById('edit_manufacturer').value = med.manufacturer || '';
+                document.getElementById('edit_batch_number').value = med.batch_number || '';
+                document.getElementById('edit_purchase_price').value = med.purchase_price;
+                document.getElementById('edit_selling_price').value = med.selling_price;
+                document.getElementById('edit_quantity').value = med.quantity;
+
+                document.getElementById('edit_barcode').value = med.barcode || '';
+
+                // Set image preview
+                const imgDisplay = document.getElementById('edit_image_display');
+                const imgPlaceholder = document.getElementById('edit_image_placeholder');
+                const imageUrl = (med.image_url && med.image_url !== 'None') ? med.image_url : null;
+
+                if (imageUrl) {
+                    imgDisplay.src = imageUrl;
+                    imgDisplay.style.display = 'block';
+                    imgPlaceholder.style.display = 'none';
+                    imgDisplay.onerror = function () {
+                        this.style.display = 'none';
+                        imgPlaceholder.style.display = 'flex';
+                    };
+                } else {
+                    imgDisplay.style.display = 'none';
+                    imgPlaceholder.style.display = 'flex';
+                }
+
+                const modal = new bootstrap.Modal(document.getElementById('editMedicineModal'));
+                modal.show();
+            } catch (err) {
+                api.showNotification("Error fetching medicine: " + err.message, "error");
+            }
+        }
+
+        document.getElementById('editMedicineForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit_medicine_id').value;
+            const formData = new FormData(e.target);
+
+            try {
+                await api.put(`/medicines/${id}`, formData);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editMedicineModal'));
+                if (modal) modal.hide();
+                fetchMedicines();
+                api.showNotification("Medicine updated successfully");
+            } catch (err) {
+                api.showNotification("Error updating medicine: " + err.message, "error");
+            }
+        });
+
+        // Search logic
+        let searchTimer;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                fetchMedicines(e.target.value);
+            }, 500);
+        });
+
+        async function deleteMedicine(id) {
+            if (await api.confirm("Are you sure you want to delete this medicine?")) {
+                try {
+                    await api.delete(`/medicines/${id}`);
+                    fetchMedicines();
+                    api.showNotification("Medicine deleted successfully");
+                } catch (err) {
+                    api.showNotification(err.message, "error");
+                }
+            }
+        }
+
+        initPage();
+    </script>
+
+</body>
+
+</html>

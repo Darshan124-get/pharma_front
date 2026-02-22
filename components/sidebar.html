@@ -1,0 +1,81 @@
+<div class="sidebar d-flex flex-column">
+    <div class="sidebar-header text-white text-center">
+        <h4 class="m-0 fw-bold"><i class="fas fa-prescription-bottle-medical me-2"></i>Pharmacy Pro</h4>
+        <p class="small text-muted mb-0 mt-1">Management System</p>
+    </div>
+
+    <div class="sidebar-menu flex-grow-1 overflow-y-auto">
+        <a href="dashboard.html" class="menu-item" data-page="dashboard">
+            <i class="fas fa-th-large"></i> Dashboard
+        </a>
+        <a href="billing.html" class="menu-item" data-page="billing">
+            <i class="fas fa-file-invoice-dollar"></i> Billing
+        </a>
+        <a href="medicines.html" class="menu-item" data-page="medicines">
+            <i class="fas fa-pills"></i> Medicines
+        </a>
+        <a href="categories.html" class="menu-item" data-page="categories" data-role="admin">
+            <i class="fas fa-tags"></i> Categories
+        </a>
+        <a href="suppliers.html" class="menu-item" data-page="suppliers">
+            <i class="fas fa-truck-field"></i> Suppliers
+        </a>
+        <a href="purchase.html" class="menu-item" data-page="purchase">
+            <i class="fas fa-shopping-cart"></i> Purchases
+        </a>
+        <a href="reports.html" class="menu-item" data-page="reports" data-role="admin">
+            <i class="fas fa-chart-line"></i> Reports
+        </a>
+        <a href="users.html" class="menu-item" data-page="users" data-role="super-admin">
+            <i class="fas fa-users-cog"></i> Users
+        </a>
+    </div>
+
+    <div class="sidebar-footer border-top border-white border-opacity-10 p-3">
+        <div class="d-flex align-items-center justify-content-between gap-2">
+            <a href="profile.html" class="text-decoration-none flex-grow-1 overflow-hidden" title="View Profile">
+                <div class="user-pill d-flex align-items-center gap-2 p-2 rounded hover-bg-light">
+                    <div class="avatar bg-primary rounded-circle shadow-sm overflow-hidden"
+                        style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <img id="sidebarUserImg" src=""
+                            style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <i id="sidebarUserIcon" class="fas fa-user-circle text-white"></i>
+                    </div>
+                    <div class="text-start overflow-hidden">
+                        <p class="m-0 small fw-bold text-white text-truncate" id="sidebarUserName">User</p>
+                        <p class="m-0 x-small text-muted text-uppercase" id="sidebarUserRole">Staff</p>
+                    </div>
+                </div>
+            </a>
+            <button onclick="api.logout()" class="btn btn-link text-danger p-2 text-decoration-none hover-scale"
+                title="Logout">
+                <i class="fas fa-power-off"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .x-small {
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+    }
+
+    .hover-bg-light:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .hover-scale {
+        transition: transform 0.2s;
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.1);
+    }
+
+    /* Hide admin items by default if JS hasn't run yet */
+    [data-role="admin"],
+    [data-role="super-admin"] {
+        display: none !important;
+    }
+</style>
